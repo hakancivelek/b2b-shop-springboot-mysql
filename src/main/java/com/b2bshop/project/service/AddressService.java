@@ -4,6 +4,7 @@ import com.b2bshop.project.exception.ResourceNotFoundException;
 import com.b2bshop.project.model.Address;
 import com.b2bshop.project.model.Country;
 import com.b2bshop.project.model.Customer;
+import com.b2bshop.project.port.GenericPort;
 import com.b2bshop.project.repository.AddressRepository;
 import com.b2bshop.project.repository.CountryRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,46 +22,43 @@ public class AddressService {
     private final CountryRepository countryRepository;
     private final SecurityService securityService;
     private final CustomerService customerService;
-    private final EntityManager entityManager;
     private final AddressRepository addressRepository;
+    private final GenericPort genericPort;
 
     public AddressService(CountryRepository countryRepository, SecurityService securityService,
-                          CustomerService customerService, EntityManager entityManager, AddressRepository addressRepository) {
+                          CustomerService customerService, AddressRepository addressRepository, GenericPort genericPort) {
         this.countryRepository = countryRepository;
         this.securityService = securityService;
         this.customerService = customerService;
-        this.entityManager = entityManager;
         this.addressRepository = addressRepository;
+        this.genericPort = genericPort;
     }
 
     public List<Map<String, Object>> getAllAddresses(HttpServletRequest request) {
         String token = request.getHeader("Authorization").split("Bearer ")[1];
         Long tenantId = securityService.returnTenantIdByUsernameOrToken("token", token);
-        Session session = entityManager.unwrap(Session.class);
 
-        String hqlQuery = "SELECT address.id as id, country.name as countryName, address.title as title," +
-                " address.city as city, address.addressLine as addressLine " +
-                " FROM Address as address " +
-                " JOIN address.customer as customer " +
-                " JOIN address.country as country " +
-                " WHERE customer.id = :tenantId";
-
-        Query query = session.createQuery(hqlQuery);
-        query.setParameter("tenantId", tenantId);
-
-        List<Object[]> results = query.list();
+        Optional<List<Address>> optionalAddresses = genericPort.findByTenantId(tenantId);
 
         List<Map<String, Object>> resultList = new ArrayList<>();
-        for (Object[] result : results) {
-            Map<String, Object> addressMap = new HashMap<>();
-            addressMap.put("id", result[0]);
-            addressMap.put("countryName", result[1]);
-            addressMap.put("title", result[2].toString());
-            addressMap.put("city", result[3].toString());
-            addressMap.put("addressLine", result[4].toString());
-            resultList.add(addressMap);
-        }
 
+        if (optionalAddresses.isPresent()) {
+            List<Address> addresses = optionalAddresses.get();
+
+            for (Address address : addresses) {
+                Map<String, Object> addressMap = new HashMap<>();
+
+                addressMap.put("id", address.getId());
+                addressMap.put("countryName", address.getCountry() != null ? address.getCountry().getName() : null);
+                addressMap.put("title", address.getTitle());
+                addressMap.put("city", address.getCity());
+                addressMap.put("addressLine", address.getAddressLine());
+
+                resultList.add(addressMap);
+            }
+        } else {
+            return null;
+        }
         return resultList;
     }
 
