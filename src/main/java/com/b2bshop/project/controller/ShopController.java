@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/shop")
+@RequestMapping("/api/v1/shop")
 public class ShopController {
     private final ShopService shopService;
     private final ShopRepository shopRepository;

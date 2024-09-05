@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/order")
+@RequestMapping("/api/v1/order")
 public class OrderController {
     private final OrderService orderService;
 

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/country")
+@RequestMapping("/api/v1/country")
 public class CountryController {
 
     CountryService countryService;

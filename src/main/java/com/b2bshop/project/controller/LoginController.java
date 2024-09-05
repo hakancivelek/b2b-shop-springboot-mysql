@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/login")
+@RequestMapping("/api/v1/login")
 @Slf4j
 public class LoginController {
     private final JwtService jwtService;
