@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -46,4 +48,15 @@ public class Order {
     private Double totalPrice;
     private Double withoutTaxPrice;
     private Double totalTax;
+
+    public void generateAndSetOrderNumber(Long tenantId) {
+        LocalDateTime now = LocalDateTime.now();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMddHHmmss");
+        String timestamp = now.format(formatter);
+
+        String orderNumber = tenantId.toString() + timestamp.substring(4, 11);
+        this.orderNumber = orderNumber;
+
+    }
 }
