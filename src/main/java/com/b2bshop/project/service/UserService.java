@@ -74,7 +74,7 @@ public class UserService implements UserDetailsService {
                 .build();
 
         if (json.get("authorities").asText().equals("ROLE_CUSTOMER_USER")) {
-            newUser.setCustomer(customerService.findCustomerById(json.get("customerTenantId").asLong()));
+            newUser.setCustomer(customerService.findById(json.get("customerTenantId").asLong()));
         } else {
             newUser.setShop(shop);
         }

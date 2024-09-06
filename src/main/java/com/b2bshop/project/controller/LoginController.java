@@ -44,7 +44,7 @@ public class LoginController {
 
         Set userRoles = user.getAuthorities();
         if (!(request.username().equals("hakan") || request.username().equals("esat")) && userRoles.contains(Role.ROLE_CUSTOMER_USER)) {
-            Customer customer = customerService.findCustomerById(tenantId);
+            Customer customer = customerService.findById(tenantId);
             if (!customer.isActive()) {
                 throw new ResourceNotFoundException("Customer not active!");
             }

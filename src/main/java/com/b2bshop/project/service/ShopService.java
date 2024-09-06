@@ -55,8 +55,8 @@ public class ShopService {
         return shopRepository.save(shop);
     }
 
-    public Shop updateShopById(Long shopId, Shop newShop) {
-        Shop shop = findShopById(shopId);
+    public Shop updateById(Long shopId, Shop newShop) {
+        Shop shop = findById(shopId);
         shop.setName(newShop.getName());
         shop.setEmail(newShop.getEmail());
         shop.setPhoneNumber(newShop.getPhoneNumber());
@@ -67,7 +67,7 @@ public class ShopService {
         return shop;
     }
 
-    public Shop findShopById(Long id) {
+    public Shop findById(Long id) {
         return shopRepository.findById(id).orElseThrow(()
                 -> new ResourceNotFoundException("Shop could not find by id: " + id));
     }

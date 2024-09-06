@@ -68,7 +68,7 @@ public class AddressService {
         Address address = new Address();
 
         Customer customer;
-        customer = customerService.findCustomerById(tenantId);
+        customer = customerService.findById(tenantId);
         address.setCustomer(customer);
 
         Country country;

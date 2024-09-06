@@ -218,7 +218,7 @@ public class ProductService {
     }
 
     @Transactional
-    public Product updateProductById(Long productId, JsonNode json) {
+    public Product updateById(Long productId, JsonNode json) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product could not be found by id: " + productId));
 
@@ -276,7 +276,7 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public Map<String, Object> findProductById(Long id) {
+    public Map<String, Object> findById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 

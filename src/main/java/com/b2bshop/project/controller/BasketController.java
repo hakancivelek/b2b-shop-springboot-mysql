@@ -37,7 +37,7 @@ public class BasketController {
 
     @GetMapping("/{basketId}")
     public Basket getBasketById(@PathVariable Long basketId) {
-        return basketService.findBasketById(basketId);
+        return basketService.findById(basketId);
     }
 
     @PostMapping("/cleanBasket")

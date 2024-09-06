@@ -192,7 +192,7 @@ public class CategoryService {
         return newCategory;
     }
 
-    public Category updateCategoryById(Long id, Category updatedCategory) {
+    public Category updateById(Long id, Category updatedCategory) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
 

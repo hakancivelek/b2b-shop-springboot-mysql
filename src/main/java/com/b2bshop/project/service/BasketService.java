@@ -167,7 +167,7 @@ public class BasketService {
         return response;
     }
 
-    public Basket findBasketById(Long id) {
+    public Basket findById(Long id) {
         return basketRepository.findById(id).orElseThrow(()
                 -> new ResourceNotFoundException("Basket could not find by id: " + id));
     }

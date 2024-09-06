@@ -47,12 +47,12 @@ public class ProductController {
 
     @GetMapping("/{productId}")
     public Map<String, Object> findProductMapById(@PathVariable Long productId) {
-        return productService.findProductById(productId);
+        return productService.findById(productId);
     }
 
     @PutMapping("/{productId}")
     public Product updateProductById(@PathVariable Long productId, @RequestBody JsonNode json) {
-        return productService.updateProductById(productId, json);
+        return productService.updateById(productId, json);
     }
 
     @DeleteMapping("/{productId}")

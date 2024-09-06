@@ -283,7 +283,7 @@ public class OrderService {
         User user = userRepository.findByUsername(userName).orElseThrow(() -> new ResourceNotFoundException("User not found by name: " + userName));
         Shop shop = user.getCustomer().getShop();
 
-        order.setCustomer(customerService.findCustomerById(tenantId));
+        order.setCustomer(customerService.findById(tenantId));
         order.setShop(shop);
         order.setOrderNote(orderNote);
         order.setOrderItems(new ArrayList<>());
@@ -293,7 +293,7 @@ public class OrderService {
         order.setReceiverAddress(addressService.findById(receiverAddressId));
         order.setOrderStatus(OrderStatus.CREATED);
 
-        List<BasketItem> basketItems = basketService.findBasketById(basketId).getBasketItems();
+        List<BasketItem> basketItems = basketService.findById(basketId).getBasketItems();
 
         order.applyBasketItemsToOrder(basketItems);
 
@@ -302,7 +302,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order findOrderById(Long id) {
+    public Order findById(Long id) {
         return orderRepository.findById(id).orElseThrow(()
                 -> new ResourceNotFoundException("Order could not find by id: " + id));
     }
@@ -333,9 +333,4 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
-
-//    public void deleteOrder(Long id) {
-//        Order order = findOrderById(id);
-//        orderRepository.delete(order);
-//    }
 }

@@ -77,8 +77,8 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    public Customer updateCustomerById(Long customerId, Customer newCustomer) {
-        Customer customer = findCustomerById(customerId);
+    public Customer updateById(Long customerId, Customer newCustomer) {
+        Customer customer = findById(customerId);
         customer.setName(newCustomer.getName());
         customer.setEmail(newCustomer.getEmail());
         customer.setShop(newCustomer.getShop());
@@ -89,7 +89,7 @@ public class CustomerService {
         return customer;
     }
 
-    public Customer findCustomerById(Long id) {
+    public Customer findById(Long id) {
         return customerRepository.findById(id).orElseThrow(()
                 -> new ResourceNotFoundException("Customer could not find by id: " + id));
     }

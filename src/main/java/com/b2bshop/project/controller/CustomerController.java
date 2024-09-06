@@ -41,12 +41,12 @@ public class CustomerController {
 
     @GetMapping("/{customerId}")
     public Customer getCustomerById(@PathVariable Long customerId) {
-        return customerService.findCustomerById(customerId);
+        return customerService.findById(customerId);
     }
 
     @PutMapping("/{customerId}")
     public Customer updateCustomerById(@PathVariable Long customerId, @RequestBody Customer newCustomer) {
-        return customerService.updateCustomerById(customerId, newCustomer);
+        return customerService.updateById(customerId, newCustomer);
     }
 
     @DeleteMapping("/{customerId}")

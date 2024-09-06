@@ -7,7 +7,6 @@ import com.b2bshop.project.service.ShopService;
 import jakarta.transaction.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -43,12 +42,12 @@ public class ShopController {
 
     @GetMapping("/{shopId}")
     public Shop getShopById(@PathVariable Long shopId) {
-        return shopService.findShopById(shopId);
+        return shopService.findById(shopId);
     }
 
     @PutMapping("/{shopId}")
     public Shop updateShopById(@PathVariable Long shopId, @RequestBody Shop newShop) {
-        return shopService.updateShopById(shopId, newShop);
+        return shopService.updateById(shopId, newShop);
     }
 
     @DeleteMapping("/{shopId}")

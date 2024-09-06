@@ -30,7 +30,7 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public Order getOrderById(@PathVariable Long id) {
-        return orderService.findOrderById(id);
+        return orderService.findById(id);
     }
 
     @PutMapping("/{id}")
