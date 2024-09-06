@@ -115,51 +115,18 @@ public class BasketService {
             basket = new Basket();
             basket.setUser(user);
         }
-        List<BasketItem> basketItems = basket.getBasketItems();
 
-        boolean itemExists = false;
         long productId = json.get("productId").asLong();
         int quantity = json.get("quantity").asInt();
         boolean updateQuantity = json.get("updateQuantity").asBoolean();
 
-        if (basketItems == null) {
-            basketItems = new ArrayList<>();
-            basket.setBasketItems(basketItems);
-        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product could not find by id: " + productId));
 
-        for (BasketItem item : basket.getBasketItems()) {
-            if (item.getProduct().getId() == productId) {
-                if (updateQuantity) {
-                    item.setQuantity(quantity);
-                } else {
-                    item.setQuantity(item.getQuantity() + quantity);
-                }
-                itemExists = true;
-                break;
-            }
-        }
+        basket.addItem(product, quantity, updateQuantity);
 
-        if (!itemExists) {
-            Product product = productRepository.findById(productId).orElseThrow(
-                    () -> new ResourceNotFoundException("Product could not find by id: " + productId));
-
-            BasketItem newItem = BasketItem.builder()
-                    .product(product)
-                    .quantity(quantity)
-                    .build();
-            basket.getBasketItems().add(newItem);
-        }
-
-        for (BasketItem basketItem : basketItems) {
-            if (basketItem.getProduct().getId().equals(productId)) {
-                int newQuantity = basketItem.getQuantity();
-                boolean stockCheck = basketItem.getProduct().isStockAvailable(newQuantity);
-                if (!stockCheck) {
-                    Product product = productRepository.findById(productId).orElseThrow(
-                            () -> new ResourceNotFoundException("Product could not find by id: " + productId));
-                    throw new ResourceNotFoundException("Stock is not enough for material: " + product.getName());
-                }
-            }
+        if (!product.isStockAvailable(quantity)) {
+            throw new ResourceNotFoundException("Stock is not enough for product: " + product.getName());
         }
 
         basketRepository.save(basket);
@@ -172,34 +139,38 @@ public class BasketService {
                 -> new ResourceNotFoundException("Basket could not find by id: " + id));
     }
 
-    public Basket removeItem(HttpServletRequest request, JsonNode json) {
-        String token = request.getHeader("Authorization").split("Bearer ")[1];
-        String userName = jwtService.extractUser(token);
-        User user = userService.findUserByName(userName);
-        Long userId = user.getId();
-        Basket basket;
-        Optional<Basket> optionalBasket = basketRepository.findByUserId(userId);
-        if (optionalBasket.isPresent()) {
-            basket = optionalBasket.get();
-        } else
-            throw new ResourceNotFoundException("Basket could not find!");
+    public Map<String, String> removeItem(HttpServletRequest request, JsonNode json) {
+        Map<String, String> response = new HashMap<>();
 
-        List<BasketItem> basketItems = basket.getBasketItems();
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid or missing Authorization header");
+        }
+
+        String token = authorizationHeader.split("Bearer ")[1];
+        String userName = jwtService.extractUser(token);
+
+        User user = userService.findUserByName(userName);
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        Long userId = user.getId();
+
+        Basket basket = basketRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Basket could not be found for user ID: " + userId));
 
         long productId = json.get("productId").asLong();
 
-        if (basketItems != null) {
-            Iterator<BasketItem> iterator = basketItems.iterator();
-            while (iterator.hasNext()) {
-                BasketItem item = iterator.next();
-                if (item.getProduct().getId() == productId) {
-                    iterator.remove();
-                    break;
-                }
-            }
+        boolean isBasketEmpty = basket.removeItem(productId);
+
+        if (isBasketEmpty) {
+            basketRepository.delete(basket);
+        } else {
+            basketRepository.save(basket);
         }
 
-        return basketRepository.save(basket);
+        response.put("success", "true");
+        return response;
     }
 
     @Transactional
@@ -212,13 +183,7 @@ public class BasketService {
         Optional<Basket> optionalBasket = basketRepository.findByUserId(userId);
         if (optionalBasket.isPresent()) {
             basket = optionalBasket.get();
-            List<BasketItem> basketItems = basket.getBasketItems();
-
-            for (BasketItem item : basketItems) {
-                basketItemRepository.deleteById(item.getId());
-            }
-
-            basketItems.clear();
+            basketRepository.delete(basket);
         } else {
             throw new ResourceNotFoundException("Basket could not find for this user! UserId:" + user.getId());
         }
@@ -230,5 +195,4 @@ public class BasketService {
 
         return response;
     }
-
 }

@@ -31,7 +31,7 @@ public class BasketController {
     }
 
     @PostMapping("/removeItem")
-    public Basket removeItemOnBasket(HttpServletRequest request, @RequestBody JsonNode json) {
+    public Map<String, String> removeItemOnBasket(HttpServletRequest request, @RequestBody JsonNode json) {
         return basketService.removeItem(request, json);
     }
 

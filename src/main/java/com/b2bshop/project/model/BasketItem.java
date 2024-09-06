@@ -17,7 +17,7 @@ public class BasketItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
-    @OneToOne
+    @ManyToOne
     private Product product;
     private int quantity;
 }

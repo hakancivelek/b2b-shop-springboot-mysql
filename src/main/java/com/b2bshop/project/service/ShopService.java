@@ -42,7 +42,7 @@ public class ShopService {
         user.setName(request.name());
         user.setEmail(request.email());
         user.setPhoneNumber(request.phoneNumber());
-        user.setPassword(passwordEncoder.encode("password"));
+        user.setPassword(passwordEncoder.encode("pass"));
         user.setShop(shop);
         user.setAuthorities(Set.of(Role.ROLE_SHOP_OWNER));
         user.setActive(true);

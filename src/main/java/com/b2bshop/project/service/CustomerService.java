@@ -64,7 +64,7 @@ public class CustomerService {
         customerUser.setUsername(json.get("email").asText());
         customerUser.setEmail(json.get("email").asText());
         customerUser.setPhoneNumber(json.get("phoneNumber").asText());
-        customerUser.setPassword(passwordEncoder.encode("password"));
+        customerUser.setPassword(passwordEncoder.encode("pass"));
         customerUser.setCustomer(customer);
         customerUser.setAuthorities(Set.of(Role.ROLE_CUSTOMER_USER));
         customerUser.setActive(true);
