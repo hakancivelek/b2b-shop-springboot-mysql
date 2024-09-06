@@ -53,10 +53,9 @@ public class AddressService {
 
                 resultList.add(addressMap);
             }
-        } else {
-            return null;
+            return resultList;
         }
-        return resultList;
+        return null;
     }
 
     @Transactional
