@@ -12,8 +12,6 @@ import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -25,23 +23,21 @@ public class OrderService {
     private final CustomerService customerService;
     private final OrderRepository orderRepository;
     private final BasketRepository basketRepository;
-    private final ProductService productService;
     private final ProductRepository productRepository;
     private final AddressService addressService;
 
     private final BasketService basketService;
 
     public OrderService(SecurityService securityService, JwtService jwtService, UserRepository userRepository,
-                        OrderRepository orderRepository, BasketRepository basketRepository, EntityManager entityManager,
-                        CustomerService customerService, ProductService productService,
-                        ProductRepository productRepository, AddressService addressService, BasketService basketService) {
+                        OrderRepository orderRepository, EntityManager entityManager,
+                        CustomerService customerService,
+                        BasketRepository basketRepository, ProductRepository productRepository, AddressService addressService, BasketService basketService) {
         this.securityService = securityService;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
-        this.basketRepository = basketRepository;
         this.customerService = customerService;
-        this.productService = productService;
+        this.basketRepository = basketRepository;
         this.productRepository = productRepository;
         this.entityManager = entityManager;
         this.addressService = addressService;
@@ -293,67 +289,17 @@ public class OrderService {
         order.setOrderItems(new ArrayList<>());
         order.setOrderDate(new Date());
         order.setCreatedBy(user);
-        order.setInvoiceAddress(addressService.findAddressById(invoiceAddressId));
-        order.setReceiverAddress(addressService.findAddressById(receiverAddressId));
+        order.setInvoiceAddress(addressService.findById(invoiceAddressId));
+        order.setReceiverAddress(addressService.findById(receiverAddressId));
         order.setOrderStatus(OrderStatus.CREATED);
 
         List<BasketItem> basketItems = basketService.findBasketById(basketId).getBasketItems();
-        Double totalPrice = 0.0;
-        Double withoutTaxPrice = 0.0;
-        Double totalTax = 0.0;
 
-        for (BasketItem basketItem : basketItems) {
-            Product refProduct = basketItem.getProduct();
-            boolean isStockAvailable = productService.checkStockById(refProduct.getId(), basketItem.getQuantity());
-
-            if (isStockAvailable) {
-                List<Image> imagesCopy = new ArrayList<>();
-                for (Image image : refProduct.getImages()) {
-                    Image imageCopy = new Image();
-                    imageCopy.setUrl(image.getUrl());
-                    imageCopy.setIsThumbnail(image.getIsThumbnail());
-                    imagesCopy.add(imageCopy);
-                }
-
-                OrderItem orderItem = OrderItem.builder()
-                        .refProductId(refProduct.getId())
-                        .name(refProduct.getName())
-                        .salesPrice(refProduct.getSalesPrice())
-                        .grossPrice(refProduct.getGrossPrice())
-                        .quantity(basketItem.getQuantity())
-                        .images(imagesCopy)
-                        .build();
-
-                totalPrice += refProduct.getGrossPrice() * basketItem.getQuantity();
-                withoutTaxPrice += refProduct.getSalesPrice() * basketItem.getQuantity();
-                totalTax = totalPrice - withoutTaxPrice;
-
-                refProduct.setStock(refProduct.getStock() - basketItem.getQuantity());
-
-                order.getOrderItems().add(orderItem);
-            } else {
-                throw new ResourceNotFoundException("Stock is not enough for material: " + refProduct.getName());
-            }
-        }
-
-        order.setTotalPrice(totalPrice);
-        order.setWithoutTaxPrice(withoutTaxPrice);
-        order.setTotalTax(totalTax);
+        order.applyBasketItemsToOrder(basketItems);
 
         basketRepository.deleteById(basketId);
 
         return orderRepository.save(order);
-    }
-
-    public static String generateOrderNumber(Long tenantId) {
-        LocalDateTime now = LocalDateTime.now();
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMddHHmmss");
-        String timestamp = now.format(formatter);
-
-        String orderNumber = tenantId.toString() + timestamp.substring(4, 11);
-
-        return orderNumber;
     }
 
     public Order findOrderById(Long id) {

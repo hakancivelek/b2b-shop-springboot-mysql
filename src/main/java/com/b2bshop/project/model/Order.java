@@ -1,5 +1,6 @@
 package com.b2bshop.project.model;
 
+import com.b2bshop.project.exception.ResourceNotFoundException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -57,6 +59,48 @@ public class Order {
 
         String orderNumber = tenantId.toString() + timestamp.substring(4, 11);
         this.orderNumber = orderNumber;
+    }
 
+    public void applyBasketItemsToOrder(List<BasketItem> basketItems) {
+        Double totalPrice = 0.0;
+        Double withoutTaxPrice = 0.0;
+        Double totalTax = 0.0;
+
+        for (BasketItem basketItem : basketItems) {
+            Product refProduct = basketItem.getProduct();
+            boolean isStockAvailable = refProduct.isStockAvailable(basketItem.getQuantity());
+
+            if (isStockAvailable) {
+                List<Image> imagesCopy = new ArrayList<>();
+                for (Image image : refProduct.getImages()) {
+                    Image imageCopy = new Image();
+                    imageCopy.setUrl(image.getUrl());
+                    imageCopy.setIsThumbnail(image.getIsThumbnail());
+                    imagesCopy.add(imageCopy);
+                }
+
+                OrderItem orderItem = new OrderItem();
+                orderItem.setRefProductId(refProduct.getId());
+                orderItem.setName(refProduct.getName());
+                orderItem.setSalesPrice(refProduct.getSalesPrice());
+                orderItem.setGrossPrice(refProduct.getGrossPrice());
+                orderItem.setQuantity(basketItem.getQuantity());
+                orderItem.setImages(imagesCopy);
+
+                totalPrice += refProduct.getGrossPrice() * basketItem.getQuantity();
+                withoutTaxPrice += refProduct.getSalesPrice() * basketItem.getQuantity();
+                totalTax = totalPrice - withoutTaxPrice;
+
+                refProduct.setStock(refProduct.getStock() - basketItem.getQuantity());
+
+                this.getOrderItems().add(orderItem);
+            } else {
+                throw new ResourceNotFoundException("Stock is not enough for material: " + refProduct.getName());
+            }
+        }
+
+        this.setTotalPrice(totalPrice);
+        this.setWithoutTaxPrice(withoutTaxPrice);
+        this.setTotalTax(totalTax);
     }
 }

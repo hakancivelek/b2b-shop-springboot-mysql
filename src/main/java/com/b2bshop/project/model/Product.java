@@ -51,4 +51,8 @@ public class Product {
     @ManyToOne(fetch = FetchType.EAGER)
     private Brand brand;
     private Date dateCreated;
+
+    public boolean isStockAvailable(int quantity) {
+        return stock >= quantity;
+    }
 }

@@ -1,10 +1,7 @@
 package com.b2bshop.project.service;
 
 import com.b2bshop.project.exception.ResourceNotFoundException;
-import com.b2bshop.project.model.Basket;
-import com.b2bshop.project.model.BasketItem;
-import com.b2bshop.project.model.Product;
-import com.b2bshop.project.model.User;
+import com.b2bshop.project.model.*;
 import com.b2bshop.project.repository.BasketItemRepository;
 import com.b2bshop.project.repository.BasketRepository;
 import com.b2bshop.project.repository.ProductRepository;
@@ -13,8 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import org.hibernate.Session;
-import org.hibernate.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -48,76 +43,59 @@ public class BasketService {
     public Map<String, Object> getBasket(HttpServletRequest request) {
         String token = request.getHeader("Authorization").split("Bearer ")[1];
         String userName = jwtService.extractUser(token);
-        Optional<User> user = userRepository.findByUsername(userName);
-        Long userId = user.get().getId();
+        User user = userRepository.findByUsername(userName)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found by name: " + userName));
 
-        Session session = entityManager.unwrap(Session.class);
-        String hqlQuery = "SELECT " +
-                " basket.id AS basketId, basketItem.id AS basketItemId, " +
-                " product.id AS productId, product.name AS productName, " +
-                " basketItem.quantity AS quantity, " +
-                " product.grossPrice AS grossPrice, product.salesPrice AS salesPrice, " +
-                " image.id AS imageId, image.url AS imageUrl, image.isThumbnail AS imageIsThumbnail ," +
-                " product.stock AS productStock " +
-                " FROM Basket as basket " +
-                " JOIN basket.basketItems as basketItem " +
-                " JOIN basketItem.product as product " +
-                " LEFT JOIN product.images as image " +
-                " WHERE basket.user.id = :userId";
-
-        Query query = session.createQuery(hqlQuery);
-        query.setParameter("userId", userId);
+        Long userId = user.getId();
+        Basket basket = basketRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Basket not found for userId: " + userId));
 
         Map<String, Object> basketMap = new HashMap<>();
-        List<Object[]> rows = query.list();
+        basketMap.put("id", basket.getId());
 
-        if (!rows.isEmpty()) {
-            Object[] firstRow = rows.get(0);
-            Long basketId = (Long) firstRow[0];
-            basketMap.put("id", basketId);
+        int basketItemCount = 0;
+        double totalCost = 0;
+        double subTotal = 0;
 
-            int basketItemCount = 0;
-            double totalCost = 0;
-            double subTotal = 0;
+        Map<String, Map<String, Object>> basketItemsMap = new HashMap<>();
+        for (BasketItem basketItem : basket.getBasketItems()) {
+            Product product = basketItem.getProduct();
+            String key = product.getId() + "-" + basketItem.getId();
+            Map<String, Object> basketItemMap = basketItemsMap.get(key);
 
-            Map<String, Map<String, Object>> basketItemsMap = new HashMap<>();
-            for (Object[] row : rows) {
-                String productId = String.valueOf(row[2]);
-                String basketItemId = String.valueOf(row[1]);
-                String key = productId + "-" + basketItemId;
-                Map<String, Object> basketItem = basketItemsMap.get(key);
+            if (basketItemMap == null) {
+                basketItemMap = new HashMap<>();
+                basketItemMap.put("basketItemId", basketItem.getId());
+                basketItemMap.put("productId", product.getId());
+                basketItemMap.put("productStock", product.getStock());
+                basketItemMap.put("productName", product.getName());
+                basketItemMap.put("quantity", basketItem.getQuantity());
+                basketItemMap.put("grossPrice", product.getGrossPrice());
+                basketItemMap.put("salesPrice", product.getSalesPrice());
 
-                if (basketItem == null) {
-                    basketItem = new HashMap<>();
-                    basketItem.put("basketItemId", basketItemId);
-                    basketItem.put("productId", productId);
-                    basketItem.put("productStock", row[10]);
-                    basketItem.put("productName", row[3]);
-                    basketItem.put("quantity", row[4]);
-                    basketItem.put("grossPrice", row[5]);
-                    basketItem.put("salesPrice", row[6]);
-                    basketItem.put("images", new ArrayList<Map<String, Object>>());
-                    basketItemsMap.put(key, basketItem);
-                    totalCost += ((Number) row[5]).doubleValue() * ((Number) row[4]).doubleValue();
-                    subTotal += ((Number) row[6]).doubleValue() * ((Number) row[4]).doubleValue();
-                    basketItemCount += 1;
+                List<Map<String, Object>> images = new ArrayList<>();
+                for (Image image : product.getImages()) {
+                    Map<String, Object> imageMap = new HashMap<>();
+                    imageMap.put("id", image.getId());
+                    imageMap.put("url", image.getUrl());
+                    imageMap.put("isThumbnail", image.getIsThumbnail());
+                    images.add(imageMap);
                 }
+                basketItemMap.put("images", images);
 
-                Map<String, Object> image = new HashMap<>();
-                image.put("id", row[7]);
-                image.put("url", row[8]);
-                image.put("isThumbnail", row[9]);
-                List<Map<String, Object>> images = (List<Map<String, Object>>) basketItem.get("images");
-                images.add(image);
+                basketItemsMap.put(key, basketItemMap);
+
+                totalCost += product.getGrossPrice() * basketItem.getQuantity();
+                subTotal += product.getSalesPrice() * basketItem.getQuantity();
+                basketItemCount += 1;
             }
-
-            basketMap.put("basketItems", new ArrayList<>(basketItemsMap.values()));
-
-            basketMap.put("basketItemCount", basketItemCount);
-            basketMap.put("subTotal", subTotal);
-            basketMap.put("totalCost", totalCost);
-            basketMap.put("totalTax", totalCost - subTotal);
         }
+
+        basketMap.put("basketItems", new ArrayList<>(basketItemsMap.values()));
+        basketMap.put("basketItemCount", basketItemCount);
+        basketMap.put("subTotal", subTotal);
+        basketMap.put("totalCost", totalCost);
+        basketMap.put("totalTax", totalCost - subTotal);
 
         return basketMap;
     }

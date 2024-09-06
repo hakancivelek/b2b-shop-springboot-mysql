@@ -8,11 +8,8 @@ import com.b2bshop.project.port.GenericPort;
 import com.b2bshop.project.repository.AddressRepository;
 import com.b2bshop.project.repository.CountryRepository;
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import org.hibernate.Session;
-import org.hibernate.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -86,7 +83,7 @@ public class AddressService {
         return addressRepository.save(address);
     }
 
-    public Address findAddressById(Long id) {
+    public Address findById(Long id) {
         return addressRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Address could not find by id: " + id));
     }

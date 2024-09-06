@@ -31,6 +31,6 @@ public class AddressController {
 
     @GetMapping("/{addressId}")
     public Address getAddressById(@PathVariable Long addressId) {
-        return addressService.findAddressById(addressId);
+        return addressService.findById(addressId);
     }
 }
