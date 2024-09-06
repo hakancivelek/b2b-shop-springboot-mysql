@@ -276,31 +276,6 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public boolean checkStockById(long productId, int quantity) {
-        Session session = entityManager.unwrap(Session.class);
-        String hqlQuery = "SELECT product.stock " +
-                " FROM Product product " +
-                " WHERE product.id = :productId";
-
-        Query query = session.createQuery(hqlQuery);
-        query.setParameter("productId", productId);
-
-        Integer stock = (Integer) query.uniqueResult();
-
-        if (stock == null) {
-            stock = 0;
-        }
-
-        return stock >= quantity;
-    }
-
-//    public Product findProductById(Long id) {
-//        Product product = productRepository.findById(id).orElseThrow(()
-//                -> new RuntimeException("Product not found by id: " + id));
-//
-//        return product;
-//    }
-
     public Map<String, Object> findProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));

@@ -153,7 +153,7 @@ public class BasketService {
         for (BasketItem basketItem : basketItems) {
             if (basketItem.getProduct().getId().equals(productId)) {
                 int newQuantity = basketItem.getQuantity();
-                boolean stockCheck = productService.checkStockById(productId, newQuantity);
+                boolean stockCheck = basketItem.getProduct().isStockAvailable(newQuantity);
                 if (!stockCheck) {
                     Product product = productRepository.findById(productId).orElseThrow(
                             () -> new ResourceNotFoundException("Product could not find by id: " + productId));
