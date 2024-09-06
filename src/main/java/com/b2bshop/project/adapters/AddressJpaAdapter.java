@@ -1,4 +1,4 @@
-package com.b2bshop.project.adapter;
+package com.b2bshop.project.adapters;
 
 import com.b2bshop.project.model.Address;
 import com.b2bshop.project.port.GenericPort;

@@ -1,7 +1,6 @@
 package com.b2bshop.project.service;
 
 import com.b2bshop.project.model.Image;
-import com.b2bshop.project.model.Product;
 import com.b2bshop.project.model.User;
 import com.b2bshop.project.repository.ImageRepository;
 import com.google.auth.Credentials;
