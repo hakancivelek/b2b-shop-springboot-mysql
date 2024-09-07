@@ -20,7 +20,7 @@ public class AddressController {
     }
 
     @GetMapping()
-    public List<Map<String, Object>> getAllProducts(HttpServletRequest request) {
+    public List<Map<String, Object>> getAllAddresses(HttpServletRequest request) {
         return addressService.getAllAddresses(request);
     }
 
