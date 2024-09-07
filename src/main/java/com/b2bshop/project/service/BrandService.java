@@ -33,40 +33,32 @@ public class BrandService {
     public List<Map<String, Object>> getAllBrands(HttpServletRequest request) {
         String token = request.getHeader("Authorization").split("Bearer ")[1];
         Long tenantId = securityService.returnTenantIdByUsernameOrToken("token", token);
-        String whereCondition = " ";
+
         String userName = jwtService.extractUser(token);
-        User user = userRepository.findByUsername(userName).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByUsername(userName)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         Set<Role> userRoles = user.getAuthorities();
+
         if (userRoles.contains(Role.ROLE_CUSTOMER_USER)) {
             tenantId = user.getCustomer().getShop().getTenantId();
         }
 
-        Session session = entityManager.unwrap(Session.class);
-        String hqlQuery = "SELECT brand.id brandId, brand.name brandName" +
-                " FROM Brand as brand " +
-                " JOIN brand.shop as shop " +
-                " WHERE 1 = 1 ";
+        List<Brand> brands;
 
         if (tenantId != null) {
-            hqlQuery += " AND shop.tenantId = :tenantId";
-        }
-        hqlQuery += whereCondition;
-
-        Query query = session.createQuery(hqlQuery);
-
-        if (tenantId != null) {
-            query.setParameter("tenantId", tenantId);
+            brands = brandRepository.findByShopTenantId(tenantId);
+        } else {
+            brands = brandRepository.findAll();
         }
 
         List<Map<String, Object>> resultList = new ArrayList<>();
-        List<Object[]> rows = query.list();
-
-        for (Object[] row : rows) {
+        for (Brand brand : brands) {
             Map<String, Object> resultMap = new HashMap<>();
-            resultMap.put("id", row[0]);
-            resultMap.put("name", row[1]);
+            resultMap.put("id", brand.getId());
+            resultMap.put("name", brand.getName());
             resultList.add(resultMap);
         }
+
         return resultList;
     }
 
