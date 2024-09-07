@@ -17,6 +17,7 @@ import org.hibernate.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
@@ -40,27 +41,23 @@ public class CategoryService {
     public List<Map<String, Object>> getAllCategories(HttpServletRequest request) {
         String token = request.getHeader("Authorization").split("Bearer ")[1];
         Long tenantId = securityService.returnTenantIdByUsernameOrToken("token", token);
+
         String userName = jwtService.extractUser(token);
-        User user = userRepository.findByUsername(userName).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByUsername(userName)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         Set<Role> userRoles = user.getAuthorities();
 
-        StringBuilder hqlQuery = new StringBuilder("SELECT category FROM Category category WHERE 1 = 1");
-        if (tenantId != null) {
-            hqlQuery.append(" AND category.shop.id = :tenantId");
-        }
+        List<Category> categories;
+
         if (userRoles.contains(Role.ROLE_CUSTOMER_USER)) {
-            hqlQuery.append(" AND category.isActive = true");
             tenantId = user.getCustomer().getShop().getTenantId();
+            categories = categoryRepository.findByShopTenantIdAndIsActiveTrue(tenantId);
+        } else if (tenantId != null) {
+            categories = categoryRepository.findByShopTenantId(tenantId);
+        } else {
+            categories = categoryRepository.findAll();
         }
 
-        Session session = entityManager.unwrap(Session.class);
-        Query query = session.createQuery(hqlQuery.toString());
-
-        if (tenantId != null) {
-            query.setParameter("tenantId", tenantId);
-        }
-
-        List<Category> categories = query.list();
         return buildCategoryHierarchy(categories);
     }
 
@@ -104,34 +101,20 @@ public class CategoryService {
         User user = userRepository.findByUsername(userName).orElseThrow(() -> new RuntimeException("User not found"));
         Set<Role> userRoles = user.getAuthorities();
 
-        StringBuilder hqlQuery = new StringBuilder("SELECT category FROM Category category WHERE category.id = :id");
-        if (tenantId != null) {
-            hqlQuery.append(" AND category.shop.id = :tenantId");
-        }
+        Category category;
         if (userRoles.contains(Role.ROLE_CUSTOMER_USER)) {
-            hqlQuery.append(" AND category.isActive = true");
             tenantId = user.getCustomer().getShop().getTenantId();
-        }
-
-        Session session = entityManager.unwrap(Session.class);
-        Query query = session.createQuery(hqlQuery.toString());
-        query.setParameter("id", id);
-
-        if (tenantId != null) {
-            query.setParameter("tenantId", tenantId);
-        }
-
-        Category category = (Category) query.uniqueResult();
-        if (category == null) {
-            throw new ResourceNotFoundException("Category not found with id: " + id);
+            category = categoryRepository.findByIdAndShopTenantIdAndIsActiveTrue(id, tenantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Active category not found for id: " + id));
+        } else {
+            category = categoryRepository.findByIdAndShopTenantId(id, tenantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found for id: " + id));
         }
 
         List<Category> allCategories = categoryRepository.findAll();
-
         List<Map<String, Object>> categoryHierarchy = buildCategoryHierarchy(allCategories);
 
         Map<String, Object> categoryData = findCategoryInHierarchy(categoryHierarchy, id);
-
         if (categoryData == null) {
             throw new ResourceNotFoundException("Category not found in hierarchy with id: " + id);
         }
